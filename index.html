@@ -24,7 +24,7 @@
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen font-sans flex flex-col justify-between">
 
-    <!-- Mock Notification Banner (App-like Popup Simulator) -->
+    <!-- Mock Notification Banner -->
     <div id="appNotification" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-11/12 max-w-md bg-slate-900/95 text-white backdrop-blur-md rounded-2xl p-4 shadow-2xl border border-indigo-500/30 transition-all duration-500 hidden">
         <div class="flex items-start space-x-3">
             <div class="bg-indigo-600 p-2.5 rounded-xl text-yellow-300 mt-0.5">
@@ -47,7 +47,7 @@
         </div>
     </div>
 
-    <!-- VIEW 1: SETUP / INITIAL FORM (หน้าแรกให้กรอกข้อมูลและซิงก์ธนาคาร) -->
+    <!-- VIEW 1: SETUP / INITIAL FORM -->
     <div id="setupView" class="max-w-2xl mx-auto px-4 py-10 w-full">
         <div class="bg-white rounded-3xl p-8 shadow-xl border border-slate-200 space-y-6">
             <div class="text-center space-y-2">
@@ -66,7 +66,7 @@
                             <i class="fa-solid fa-building-columns"></i>
                         </div>
                         <div>
-                            <p class="text-xs font-bold text-indigo-900">เชื่อมต่อบัญชีธนาคาร (Bank Sync)</p>
+                            <p class="text-xs font-bold text-indigo-900">เชื่อมต่อบัญชีธนาคาร (Bank Sync Simulation)</p>
                             <p id="syncStatusText" class="text-[11px] text-indigo-600 font-medium">ยังไม่ได้เชื่อมต่อบัญชี</p>
                         </div>
                     </div>
@@ -133,7 +133,7 @@
     </div>
 
 
-    <!-- VIEW 2: DASHBOARD (แสดงผลยอดเงินและโควต้างบรายวัน) -->
+    <!-- VIEW 2: DASHBOARD -->
     <div id="dashboardView" class="hidden flex flex-col min-h-screen justify-between">
         <header class="bg-indigo-700 text-white shadow-md sticky top-0 z-40">
             <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
@@ -164,7 +164,7 @@
                         <span id="zoneBadge" class="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider backdrop-blur-md">
                             <i class="fa-solid fa-triangle-exclamation mr-1"></i> โซนอันตราย (Red Zone)
                         </span>
-                        <p class="text-rose-100 text-sm mt-3 font-medium">ยอดเงินคงเหลือในบัญชีปัจจุบัน (ซิงก์จากธนาคาร)</p>
+                        <p class="text-rose-100 text-sm mt-3 font-medium">ยอดเงินคงเหลือในบัญชีปัจจุบัน</p>
                         <div class="flex items-baseline space-x-2 mt-1">
                             <h2 id="displayBalance" class="text-4xl md:text-6xl font-bold tracking-tight">987.00</h2>
                             <span class="text-xl text-rose-200">บาท</span>
@@ -239,7 +239,6 @@
 
     <!-- JavaScript Application Logic -->
     <script>
-        // เริ่มต้นโหลดตัวเลือกวันในรอบเดือนเมื่อเปิดเว็บ
         window.onload = function() {
             updatePaycycleOptions();
         };
@@ -277,14 +276,15 @@
                 }
             } else {
                 label.innerText = "รอบรับเงิน (เลือกวันในสัปดาห์)";
+                // 1=จันทร์, 2=อังคาร, ..., 0=อาทิตย์
                 const days = [
-                    {val: 'Mon', name: 'ทุกวันจันทร์'},
-                    {val: 'Tue', name: 'ทุกวันอังคาร'},
-                    {val: 'Wed', name: 'ทุกวันพุธ'},
-                    {val: 'Thu', name: 'ทุกวันพฤหัสบดี'},
-                    {val: 'Fri', name: 'ทุกวันศุกร์'},
-                    {val: 'Sat', name: 'ทุกวันเสาร์'},
-                    {val: 'Sun', name: 'ทุกวันอาทิตย์'}
+                    {val: 1, name: 'ทุกวันจันทร์'},
+                    {val: 2, name: 'ทุกวันอังคาร'},
+                    {val: 3, name: 'ทุกวันพุธ'},
+                    {val: 4, name: 'ทุกวันพฤหัสบดี'},
+                    {val: 5, name: 'ทุกวันศุกร์'},
+                    {val: 6, name: 'ทุกวันเสาร์'},
+                    {val: 0, name: 'ทุกวันอาทิตย์'}
                 ];
                 days.forEach(d => {
                     let opt = document.createElement('option');
@@ -298,19 +298,33 @@
 
         function autoCalculateDays() {
             const type = document.getElementById('setupPaycycleType').value;
-            const val = document.getElementById('setupPaycycleValue').value;
+            const val = parseInt(document.getElementById('setupPaycycleValue').value);
             const daysInput = document.getElementById('setupDaysLeft');
 
-            // จำลองการคำนวณจำนวนวันที่เหลืออัตโนมัติคร่าวๆ
-            let calculatedDays = 7;
+            const today = new Date();
+            let currentDay = today.getDate();
+            let currentDayOfWeek = today.getDay(); // 0=อาทิตย์, 1=จันทร์, ... 6=เสาร์
+            let calculatedDays = 1;
+
             if(type === 'monthly') {
-                let targetDate = parseInt(val);
-                let today = new Date().getDate();
-                calculatedDays = targetDate >= today ? targetDate - today : (30 - today + targetDate);
-                if(calculatedDays <= 0) calculatedDays = 1;
+                let targetDate = val;
+                // คำนวณวันในเดือนนี้หรือเดือนหน้า
+                if (targetDate >= currentDay) {
+                    calculatedDays = targetDate - currentDay;
+                } else {
+                    calculatedDays = (30 - currentDay) + targetDate;
+                }
+                if (calculatedDays <= 0) calculatedDays = 7; // ถ้าตรงกับวันนี้ ให้รอบต่อไปคือ 7 วันหรือสิ้นเดือน
             } else {
-                calculatedDays = 3; // สมมติรอบสัปดาห์เหลือ 3 วันโดยเฉลี่ย
+                // คำนวณหาวันถัดไปในสัปดาห์ (targetDayOfWeek: 0-6)
+                let targetDayOfWeek = val;
+                let diff = targetDayOfWeek - currentDayOfWeek;
+                if (diff <= 0) {
+                    diff += 7; // ถ้าวันนั้นผ่านไปแล้วในสัปดาห์นี้ ให้คิดเป็นสัปดาห์หน้า
+                }
+                calculatedDays = diff;
             }
+
             daysInput.value = calculatedDays;
         }
 
