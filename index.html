@@ -47,7 +47,7 @@
         </div>
     </div>
 
-    <!-- VIEW 1: SETUP / INITIAL FORM (แสดงตอนเข้าเว็บครั้งแรก) -->
+    <!-- VIEW 1: SETUP / INITIAL FORM (หน้าแรกให้กรอกข้อมูลและซิงก์ธนาคาร) -->
     <div id="setupView" class="max-w-2xl mx-auto px-4 py-10 w-full">
         <div class="bg-white rounded-3xl p-8 shadow-xl border border-slate-200 space-y-6">
             <div class="text-center space-y-2">
@@ -55,38 +55,50 @@
                     <i class="fa-solid fa-wallet"></i>
                 </div>
                 <h1 class="font-bold text-2xl text-slate-900">ตั้งค่าข้อมูลการเงินของคุณ</h1>
-                <p class="text-xs text-slate-500">ระบบจะช่วยคำนวณโควต้างบรายวันและเตือนภัยเงินช็อตตามข้อมูลจริงของคุณ</p>
+                <p class="text-xs text-slate-500">ซิงก์บัญชีธนาคารเพื่อดึงยอดเงินอัตโนมัติและวางแผนงบรายวัน</p>
             </div>
 
             <div class="space-y-4">
+                <!-- Bank Sync Section -->
+                <div class="bg-indigo-50/70 border border-indigo-100 rounded-2xl p-4 flex justify-between items-center">
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-indigo-600 text-white p-2.5 rounded-xl">
+                            <i class="fa-solid fa-building-columns"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-indigo-900">เชื่อมต่อบัญชีธนาคาร (Bank Sync)</p>
+                            <p id="syncStatusText" class="text-[11px] text-indigo-600 font-medium">ยังไม่ได้เชื่อมต่อบัญชี</p>
+                        </div>
+                    </div>
+                    <button onclick="openSyncModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow transition">
+                        <i class="fa-solid fa-link mr-1"></i> ซิงก์บัญชี
+                    </button>
+                </div>
+
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">ยอดเงินคงเหลือปัจจุบันในบัญชี (บาท)</label>
-                    <input type="number" id="setupBalance" value="987" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-semibold">
+                    <input type="number" id="setupBalance" value="987" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-semibold" placeholder="กดซิงก์ธนาคารหรือกรอกเอง">
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">รูปแบบรอบเงินออก</label>
-                        <select id="setupPaycycleType" onchange="togglePaycycleInput()" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-semibold">
-                            <option value="date">ระบุวันที่ในเดือน (เช่น วันที่ 25)</option>
-                            <option value="weekly">รับเป็นรอบสัปดาห์ (เช่น ทุก 7 วัน)</option>
-                            <option value="dayofweek">ระบุวันในสัปดาห์ (เช่น ทุกวันจันทร์)</option>
+                        <select id="setupPaycycleType" onchange="updatePaycycleOptions()" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-semibold">
+                            <option value="monthly">รับเป็นรอบเดือน</option>
+                            <option value="weekly">รับเป็นรอบสัปดาห์</option>
                         </select>
                     </div>
                     <div>
-                        <label id="paycycleLabel" class="block text-xs font-semibold text-slate-700 mb-1">วันรับเงินรอบถัดไป</label>
-                        <select id="setupPaycycleValue" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-semibold">
-                            <option value="25">ทุกวันที่ 25 ของเดือน</option>
-                            <option value="1">ทุกวันที่ 1 ของเดือน</option>
-                            <option value="15">ทุกวันที่ 15 ของเดือน</option>
-                            <option value="30">สิ้นเดือน</option>
+                        <label id="paycycleLabel" class="block text-xs font-semibold text-slate-700 mb-1">รอบรับเงิน</label>
+                        <select id="setupPaycycleValue" onchange="autoCalculateDays()" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-semibold">
+                            <!-- จะถูกเติมโดย JavaScript -->
                         </select>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">จำนวนวันที่เหลือจนถึงวันเงินออก (วัน)</label>
-                    <input type="number" id="setupDaysLeft" value="7" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-semibold">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">จำนวนวันที่เหลือจนถึงวันเงินออก (คำนวณอัตโนมัติ)</label>
+                    <input type="number" id="setupDaysLeft" value="7" readonly class="w-full bg-slate-100 border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-600 outline-none font-semibold cursor-not-allowed">
                 </div>
 
                 <!-- Fixed Expenses Section -->
@@ -121,9 +133,8 @@
     </div>
 
 
-    <!-- VIEW 2: DASHBOARD (แสดงหลังจากกรอกข้อมูลแล้ว) -->
+    <!-- VIEW 2: DASHBOARD (แสดงผลยอดเงินและโควต้างบรายวัน) -->
     <div id="dashboardView" class="hidden flex flex-col min-h-screen justify-between">
-        <!-- Top Navigation -->
         <header class="bg-indigo-700 text-white shadow-md sticky top-0 z-40">
             <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
                 <div class="flex items-center space-x-3">
@@ -143,10 +154,7 @@
             </div>
         </header>
 
-        <!-- Main Container -->
         <main class="max-w-4xl mx-auto px-4 py-6 space-y-6 w-full flex-1">
-
-            <!-- Section 1: Main Status & Daily Safe Budget -->
             <section id="zoneCard" class="bg-gradient-to-br from-rose-500 to-red-600 text-white rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden transition-all duration-500">
                 <div class="absolute right-[-20px] bottom-[-20px] text-white/10 text-9xl pointer-events-none">
                     <i class="fa-solid fa-coins"></i>
@@ -156,7 +164,7 @@
                         <span id="zoneBadge" class="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider backdrop-blur-md">
                             <i class="fa-solid fa-triangle-exclamation mr-1"></i> โซนอันตราย (Red Zone)
                         </span>
-                        <p class="text-rose-100 text-sm mt-3 font-medium">ยอดเงินคงเหลือในบัญชีปัจจุบัน</p>
+                        <p class="text-rose-100 text-sm mt-3 font-medium">ยอดเงินคงเหลือในบัญชีปัจจุบัน (ซิงก์จากธนาคาร)</p>
                         <div class="flex items-baseline space-x-2 mt-1">
                             <h2 id="displayBalance" class="text-4xl md:text-6xl font-bold tracking-tight">987.00</h2>
                             <span class="text-xl text-rose-200">บาท</span>
@@ -191,54 +199,119 @@
                 </div>
             </section>
 
-            <!-- Section 2: Summary Breakdown -->
             <section class="bg-white rounded-3xl p-6 shadow-md border border-slate-200 space-y-4">
                 <h3 class="font-bold text-base text-slate-800 flex items-center">
                     <i class="fa-solid fa-file-invoice-dollar text-indigo-600 mr-2"></i> รายการรายจ่ายคงที่ที่ถูกหักออกรอบนี้
                 </h3>
-                <div id="summaryExpenseList" class="divide-y divide-slate-100 text-sm">
-                    <!-- รายการจะถูกเติมผ่าน JS -->
-                </div>
+                <div id="summaryExpenseList" class="divide-y divide-slate-100 text-sm"></div>
             </section>
-
         </main>
 
-        <!-- Footer -->
         <footer class="text-center py-6 text-xs text-slate-400 bg-white border-t border-slate-200 mt-8">
             <p>Faculty of Economics, Chiang Mai University | Student Financial Warning System Prototype (2026)</p>
         </footer>
     </div>
 
+    <!-- Bank Sync Modal Simulation -->
+    <div id="syncModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-slate-800 text-base"><i class="fa-solid fa-building-columns text-indigo-600 mr-2"></i> เชื่อมต่อบัญชีธนาคาร (Bank Sync)</h3>
+                <button onclick="closeSyncModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p class="text-xs text-slate-500">เลือกบัญชีธนาคารที่คุณต้องการซิงก์ยอดเงินคงเหลืออัตโนมัติ:</p>
+            <div class="space-y-2">
+                <div onclick="selectBank('KBank (กสิกรไทย)', 987)" class="p-3 rounded-2xl border border-slate-200 hover:border-indigo-600 hover:bg-indigo-50 cursor-pointer flex justify-between items-center transition">
+                    <span class="font-semibold text-sm">KBank (กสิกรไทย)</span>
+                    <span class="text-xs text-indigo-600 font-bold">987.00 ฿</span>
+                </div>
+                <div onclick="selectBank('SCB (ไทยพาณิชย์)', 3280)" class="p-3 rounded-2xl border border-slate-200 hover:border-indigo-600 hover:bg-indigo-50 cursor-pointer flex justify-between items-center transition">
+                    <span class="font-semibold text-sm">SCB (ไทยพาณิชย์)</span>
+                    <span class="text-xs text-indigo-600 font-bold">3,280.00 ฿</span>
+                </div>
+                <div onclick="selectBank('KTB (กรุงไทย)', 1500)" class="p-3 rounded-2xl border border-slate-200 hover:border-indigo-600 hover:bg-indigo-50 cursor-pointer flex justify-between items-center transition">
+                    <span class="font-semibold text-sm">KTB (กรุงไทย)</span>
+                    <span class="text-xs text-indigo-600 font-bold">1,500.00 ฿</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- JavaScript Application Logic -->
     <script>
-        function togglePaycycleInput() {
+        // เริ่มต้นโหลดตัวเลือกวันในรอบเดือนเมื่อเปิดเว็บ
+        window.onload = function() {
+            updatePaycycleOptions();
+        };
+
+        function openSyncModal() {
+            document.getElementById('syncModal').classList.remove('hidden');
+        }
+
+        function closeSyncModal() {
+            document.getElementById('syncModal').classList.add('hidden');
+        }
+
+        function selectBank(bankName, balance) {
+            document.getElementById('setupBalance').value = balance;
+            document.getElementById('syncStatusText').innerText = `เชื่อมต่อสำเร็จ (${bankName})`;
+            document.getElementById('syncStatusText').className = "text-[11px] text-emerald-600 font-bold";
+            closeSyncModal();
+        }
+
+        function updatePaycycleOptions() {
             const type = document.getElementById('setupPaycycleType').value;
             const label = document.getElementById('paycycleLabel');
             const select = document.getElementById('setupPaycycleValue');
 
-            if(type === 'date') {
-                label.innerText = "วันรับเงินรอบถัดไป (วันที่ในเดือน)";
-                select.innerHTML = `
-                    <option value="25">ทุกวันที่ 25 ของเดือน</option>
-                    <option value="1">ทุกวันที่ 1 ของเดือน</option>
-                    <option value="15">ทุกวันที่ 15 ของเดือน</option>
-                    <option value="30">สิ้นเดือน</option>
-                `;
-            } else if(type === 'weekly') {
-                label.innerText = "รอบรับเงิน (ทุกๆ กี่วัน)";
-                select.innerHTML = `
-                    <option value="7">ทุกๆ 7 วัน (รายสัปดาห์)</option>
-                    <option value="14">ทุกๆ 14 วัน (ทุก 2 สัปดาห์)</option>
-                `;
+            select.innerHTML = "";
+
+            if(type === 'monthly') {
+                label.innerText = "รอบรับเงิน (เลือกวันที่ใน 1 เดือน)";
+                for(let i = 1; i <= 31; i++) {
+                    let opt = document.createElement('option');
+                    opt.value = i;
+                    opt.innerText = `ทุกวันที่ ${i} ของเดือน`;
+                    if(i === 25) opt.selected = true;
+                    select.appendChild(opt);
+                }
             } else {
-                label.innerText = "รับเงินทุกวันไหนของสัปดาห์";
-                select.innerHTML = `
-                    <option value="Mon">ทุกวันจันทร์</option>
-                    <option value="Fri">ทุกวันศุกร์</option>
-                    <option value="Sun">ทุกวันอาทิตย์</option>
-                `;
+                label.innerText = "รอบรับเงิน (เลือกวันในสัปดาห์)";
+                const days = [
+                    {val: 'Mon', name: 'ทุกวันจันทร์'},
+                    {val: 'Tue', name: 'ทุกวันอังคาร'},
+                    {val: 'Wed', name: 'ทุกวันพุธ'},
+                    {val: 'Thu', name: 'ทุกวันพฤหัสบดี'},
+                    {val: 'Fri', name: 'ทุกวันศุกร์'},
+                    {val: 'Sat', name: 'ทุกวันเสาร์'},
+                    {val: 'Sun', name: 'ทุกวันอาทิตย์'}
+                ];
+                days.forEach(d => {
+                    let opt = document.createElement('option');
+                    opt.value = d.val;
+                    opt.innerText = d.name;
+                    select.appendChild(opt);
+                });
             }
+            autoCalculateDays();
+        }
+
+        function autoCalculateDays() {
+            const type = document.getElementById('setupPaycycleType').value;
+            const val = document.getElementById('setupPaycycleValue').value;
+            const daysInput = document.getElementById('setupDaysLeft');
+
+            // จำลองการคำนวณจำนวนวันที่เหลืออัตโนมัติคร่าวๆ
+            let calculatedDays = 7;
+            if(type === 'monthly') {
+                let targetDate = parseInt(val);
+                let today = new Date().getDate();
+                calculatedDays = targetDate >= today ? targetDate - today : (30 - today + targetDate);
+                if(calculatedDays <= 0) calculatedDays = 1;
+            } else {
+                calculatedDays = 3; // สมมติรอบสัปดาห์เหลือ 3 วันโดยเฉลี่ย
+            }
+            daysInput.value = calculatedDays;
         }
 
         function addFixedExpenseRow() {
@@ -257,10 +330,8 @@
         function submitSetup() {
             const balance = parseFloat(document.getElementById('setupBalance').value) || 0;
             const daysLeft = parseInt(document.getElementById('setupDaysLeft').value) || 1;
-            const paycycleVal = document.getElementById('setupPaycycleValue').value;
-            const paycycleTypeText = document.getElementById('setupPaycycleType').selectedOptions[0].text;
+            const paycycleVal = document.getElementById('setupPaycycleValue').selectedOptions[0].text;
 
-            // คำนวณรายจ่ายคงที่รวม
             let totalFixed = 0;
             let expenseItemsHTML = "";
             const rows = document.querySelectorAll('.expense-row');
@@ -278,22 +349,19 @@
                 `;
             });
 
-            const reserve = 100; // เงินสำรองกันไว้
+            const reserve = 100;
             const safeDailyQuota = Math.max(0, balance - totalFixed - reserve) / (daysLeft > 0 ? daysLeft : 1);
             const daysCovered = daysLeft > 0 ? Math.max(0, balance - totalFixed) / (safeDailyQuota > 0 ? safeDailyQuota : 1) : 0;
 
-            // อัปเดตข้อมูลลง Dashboard
             document.getElementById('displayBalance').innerText = balance.toLocaleString('en-US', {minimumFractionDigits: 2});
             document.getElementById('displayDaysLeft').innerText = daysLeft;
-            document.getElementById('displayPaycycle').innerText = paycycleVal.includes('ทุก') ? paycycleVal : `วันที่ ${paycycleVal}`;
+            document.getElementById('displayPaycycle').innerText = paycycleVal;
             document.getElementById('displayDailyQuota').innerText = safeDailyQuota.toFixed(2);
             document.getElementById('displayPending').innerText = totalFixed.toLocaleString() + ' บาท';
             document.getElementById('summaryExpenseList').innerHTML = expenseItemsHTML;
 
-            // ตั้งค่า Pop-up แจ้งเตือน
             document.getElementById('notifDaily').innerText = safeDailyQuota.toFixed(2);
 
-            // โซนเตือนภัย
             const zoneCard = document.getElementById('zoneCard');
             const zoneBadge = document.getElementById('zoneBadge');
             const notifZoneBadge = document.getElementById('notifZoneBadge');
@@ -315,11 +383,9 @@
                 notifZoneBadge.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> โซนปลอดภัย`;
             }
 
-            // สลับหน้าจอ
             document.getElementById('setupView').classList.add('hidden');
             document.getElementById('dashboardView').classList.remove('hidden');
 
-            // แสดง Pop-up แจ้งเตือน
             setTimeout(() => {
                 document.getElementById('appNotification').classList.remove('hidden');
             }, 500);
